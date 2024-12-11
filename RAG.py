@@ -1,22 +1,41 @@
-import streamlit as st
-from langchain.document_loaders import DirectoryLoader  # 문서 로딩
-from langchain.text_splitter import RecursiveCharacterTextSplitter  # 텍스트 분할
-from langchain.embeddings import OpenAIEmbeddings  # 임베딩
-from langchain.vectorstores import FAISS  # 벡터 저장소
-from langchain.chat_models import ChatOpenAI  # LLM
-from langchain.chains import ConversationalRetrievalChain
 import os
+import streamlit as st
+from langchain_community.document_loaders import DirectoryLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.embeddings.openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_openai import ChatOpenAI
+from langchain.chains import ConversationalRetrievalChain
 
-# OpenAI API 키 설정
-os.environ["OPENAI_API_KEY"] = "your-api-key"
+# API 키 입력 및 설정
+def set_openai_api_key():
+    if 'OPENAI_API_KEY' not in st.session_state:
+        st.session_state.OPENAI_API_KEY = ''
+    
+    api_key_input = st.text_input(
+        "OpenAI API 키를 입력하세요:",
+        type="password",
+        value=st.session_state.OPENAI_API_KEY,
+        key="api_key_input"
+    )
 
-st.title("RAG 시스템")
+    if api_key_input:
+        st.session_state.OPENAI_API_KEY = api_key_input
+        os.environ["OPENAI_API_KEY"] = api_key_input
+        return True
+    else:
+        st.warning("API 키를 입력해주세요!")
+        return False
+
+# API 키 설정 확인
+if not set_openai_api_key():
+    st.stop()
 
 # 1. 문서 로딩 및 처리
-@st.cache_resource  # 캐싱을 통한 성능 최적화
+@st.cache_resource  # 캐싱을 통한 성능 최적
 def initialize_rag():
-    # 문서 로딩
-    loader = DirectoryLoader("your_documents_folder/", glob="*.txt")
+    # 문서 로딩 경로를 'documents' 폴더로 수정
+    loader = DirectoryLoader("./documents/", glob="*.txt")  # 상대 경로 사용
     documents = loader.load()
     
     # 텍스트 분할
